@@ -2,13 +2,13 @@
   {{ input }}
 </script>
 <form id='results-form' method='post' action='dummy' class='text-center'>
-  <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-  <input type='hidden' value='' name='output' id='output'/>
-  <input type='submit' class='btn btn-lg btn-success' id='submit-btn' value='Submit' disabled/>          
+  <input type='hidden' value='' name='assignmentId' id='assignmentId' />
+  <input type='hidden' value='' name='output' id='output' />
+  <input type='submit' class='btn btn-lg btn-success' id='submit-btn' value='Submit' disabled />
 </form>
 <script>
-  var simpleamt = (function() {
-    
+  var simpleamt = (function () {
+
     // Copied from http://james.padolsey.com/javascript/bujs-1-getparameterbyname/
     function getUrlParam(name) {
       var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
@@ -16,7 +16,7 @@
     }
 
     function getInput(default_input) {
-      if (typeof(default_input) === 'undefined') default_input = null;
+      if (typeof (default_input) === 'undefined') default_input = null;
       try {
         return JSON.parse($('#input').html());
       } catch (e) {
@@ -36,7 +36,7 @@
 
     function setupSubmit() {
       var submit_to = getUrlParam('turkSubmitTo');
-      $('#results-form').attr('action', submit_to + '/mturk/externalSubmit');                      
+      $('#results-form').attr('action', submit_to + '/mturk/externalSubmit');
       $('#assignmentId').val(getUrlParam('assignmentId'));
     }
 
