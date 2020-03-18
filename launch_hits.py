@@ -30,12 +30,8 @@ if __name__ == "__main__":
         sys.exit()
 
     with open(args.hit_ids_file, "w") as hit_ids_file:
-        for i, line in enumerate(args.input_json_file):
-            hit_input = json.loads(line.strip())
-
-            # In a previous version I removed all single quotes from
-            # the json dump.
-            # TODO: double check to see if this is still necessary.
+        json_obj = json.loads("["+args.input_json_file.read()+"]")
+        for i, hit_input in enumerate(json_obj):
             template_params = {"input": json.dumps(hit_input)}
             html_doc = template.render(template_params)
             html_question = """
