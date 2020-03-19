@@ -181,7 +181,7 @@ The rendered template will be stored in a directory called `rendered_templates` 
 To actually view the rendered template in a web browser, you will need to run a local HTTP server so that protocol-relative URLs resolve properly. Python makes this very easy; just run
 
 ```
-python -m http.server 8080
+python -m http.server -b localhost 8080
 ```
 
 then point your web browser at http://localhost:8080/.
