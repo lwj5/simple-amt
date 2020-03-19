@@ -1,6 +1,5 @@
 import argparse
 import json
-import os
 import sys
 
 import simpleamt
@@ -25,12 +24,9 @@ if __name__ == "__main__":
     if args.hit_ids_file is None:
         print("Need to input a hit_ids_file")
         sys.exit()
-    if os.path.isfile(args.hit_ids_file):
-        print("hit_ids_file already exists")
-        sys.exit()
 
     with open(args.hit_ids_file, "w") as hit_ids_file:
-        json_obj = json.loads("["+args.input_json_file.read()+"]")
+        json_obj = json.loads("[" + args.input_json_file.read() + "]")
         for i, hit_input in enumerate(json_obj):
             template_params = {"input": json.dumps(hit_input)}
             html_doc = template.render(template_params)
