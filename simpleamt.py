@@ -34,7 +34,7 @@ def get_parent_parser():
         default=True,
         help="Whether to run on the production AMT site.",
     )
-    parser.add_argument("--hit_ids_file")
+    parser.add_argument("-hf", "--hit_ids_file")
     parser.add_argument("--config", default="config.json", type=json_file)
     return parser
 

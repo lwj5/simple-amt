@@ -20,7 +20,8 @@ if __name__ == "__main__":
     if s.strip().lower() == "y":
         try:
             mtc.delete_hit(HITId=hit_id)
-        except:
+        except Exception as e:
             print("Failed to delete: %s" % (hit_id))
+            print(e)
     else:
         print("Aborting")
