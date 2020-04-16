@@ -3,14 +3,88 @@ import json
 import random
 import sys
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, split
+
+import htmlmin
 
 import simpleamt
 
 
-def launch_hit(hit_input):
+def setup_qualifications(hit_properties):
+    """
+    Replace some of the human-readable keys from the raw HIT properties
+    JSON data structure with boto-specific objects.
+    """
+    qual = []
+    if "Qualifications" in hit_properties:
+        for qualification in hit_properties["Qualifications"]:
+            if (
+                "QualificationTypeId" in qualification
+                and "Comparator" in qualification
+            ):
+                comparator = qualification["Comparator"]
+                available_comparators = [
+                    "LessThan",
+                    "LessThanOrEqualTo",
+                    "GreaterThan",
+                    "GreaterThanOrEqualTo",
+                    "EqualTo",
+                    "NotEqualTo",
+                    "Exists",
+                    "DoesNotExist",
+                    "In",
+                    "NotIn",
+                ]
+                if comparator not in available_comparators:
+                    print(
+                        "The 'qualification comparator' is not one of {}".format(
+                            available_comparators
+                        )
+                    )
+                    sys.exit(1)
+                qual.append(qualification)
+        del hit_properties["Qualifications"]
+
+    if "Country" in hit_properties:
+        qual.append(
+            {
+                "QualificationTypeId": "00000000000000000071",
+                "Comparator": "In",
+                "LocaleValues": [
+                    {"Country": country}
+                    for country in hit_properties["Country"]
+                ],
+            }
+        )
+        del hit_properties["Country"]
+
+    if "HitsApproved" in hit_properties:
+        qual.append(
+            {
+                "QualificationTypeId": "00000000000000000040",
+                "Comparator": "GreaterThan",
+                "IntegerValues": [hit_properties["HitsApproved"]],
+            }
+        )
+        del hit_properties["HitsApproved"]
+
+    if "PercentApproved" in hit_properties:
+        qual.append(
+            {
+                "QualificationTypeId": "000000000000000000L0",
+                "Comparator": "GreaterThan",
+                "IntegerValues": [hit_properties["PercentApproved"]],
+            }
+        )
+        del hit_properties["PercentApproved"]
+
+    hit_properties["QualificationRequirements"] = qual
+
+
+def launch_hit(hit_input, mtc):
     template_params = {"input": json.dumps(hit_input)}
     html_doc = template.render(template_params)
+    minified_html_doc = htmlmin.minify(html_doc, remove_empty_space=True)
     html_question = """
     <HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
         <HTMLContent>
@@ -22,7 +96,7 @@ def launch_hit(hit_input):
         <FrameHeight>%d</FrameHeight>
     </HTMLQuestion>
     """ % (
-        html_doc,
+        minified_html_doc,
         frame_height,
     )
     hit_properties["Question"] = html_question
@@ -36,6 +110,7 @@ def launch_hit(hit_input):
             launched = True
         except Exception as e:
             print(e)
+            return None
     return boto_hit["HIT"]["HITId"]
 
 
@@ -59,14 +134,13 @@ if __name__ == "__main__":
         sys.exit()
 
     if not args.input_json_file and not args.input_json_directory:
-        print("Require a input_json_file or input_json_directory")
+        print("Either a input_json_file or input_json_directory is required")
         sys.exit()
 
     mtc = simpleamt.get_mturk_connection_from_args(args)
-
     hit_properties = json.load(args.hit_properties_file)
     hit_properties["Reward"] = str(hit_properties["Reward"])
-    simpleamt.setup_qualifications(hit_properties, mtc)
+    setup_qualifications(hit_properties)
 
     frame_height = hit_properties.pop("FrameHeight")
     env = simpleamt.get_jinja_env(args.config)
@@ -84,9 +158,17 @@ if __name__ == "__main__":
             files = [args.input_json_file]
 
         for f in files:
+            _, filename = split(f)
+            if filename.lower() == ".ds_store":
+                continue
+
             with open(f, "r") as f_stream:
-                json_obj = json.loads("[" + f_stream.read() + "]")
+                print("Reading {}".format(f))
+                json_obj = json.loads(f_stream.read())
                 for i, hit_input in enumerate(json_obj):
-                    hit_id = launch_hit(hit_input)
-                    hit_ids_file.write("%s\n" % hit_id)
-                    print("Launched HIT ID: %s, %d" % (hit_id, i + 1))
+                    hit_id = launch_hit(hit_input, mtc)
+                    if hit_id:
+                        hit_ids_file.write("%s\n" % hit_id)
+                        print("Launched HIT ID: %s, %d" % (hit_id, i + 1))
+                    else:
+                        print("Launched HIT ID Failed: %d" % (i + 1))
