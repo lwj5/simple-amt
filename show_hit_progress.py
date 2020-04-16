@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     counter = Counter()
     for idx, hit_id in enumerate(hit_ids):
-        print("Checking HIT %d / %d" % (idx + 1, len(hit_ids)))
+        print("Checking HIT {} ({}/{})".format(hit_id, idx + 1, len(hit_ids)))
         try:
             hit = mtc.get_hit(HITId=hit_id)["HIT"]
         except Exception as e:
@@ -37,6 +37,7 @@ if __name__ == "__main__":
                     "Rejected",
                 ]:
                     completed += 1
+        print("Completed {}/{}".format(completed, total))
         counter.update([(completed, total)])
 
     for (completed, total), count in counter.most_common():
