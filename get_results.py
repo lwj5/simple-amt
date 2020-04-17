@@ -22,13 +22,21 @@ def process_assignments(mtc, hit_id, status):
                         r"<FreeText>(?P<answer>.*?)</FreeText>", a["Answer"]
                     )["answer"]
                 )
+
+                accept_time = a["AcceptTime"]
+                submit_time = a["SubmitTime"]
+                time_delta = submit_time - accept_time
+                total_seconds = time_delta.total_seconds()
+                minutes = total_seconds / 60
                 results.append(
                     {
                         "assignment_id": a["AssignmentId"],
                         "hit_id": hit_id,
                         "worker_id": a["WorkerId"],
                         "output": answer,
-                        "submit_time": str(a["SubmitTime"]),
+                        "accept_time": str(accept_time),
+                        "submit_time": str(submit_time),
+                        "time_taken": str(minutes),
                     }
                 )
     except mtc.exceptions.RequestError:
