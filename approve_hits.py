@@ -10,8 +10,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     mtc = simpleamt.get_mturk_connection_from_args(args)
 
-    approve_ids = []
-    reject_ids = []
+    approve_ids = set()
+    reject_ids = set()
 
     if args.hit_ids_file is None:
         parser.error("Must specify --hit_ids_file.")
@@ -28,7 +28,7 @@ if __name__ == "__main__":
                 for a in a_page["Assignments"]:
                     if a["AssignmentStatus"] == "Submitted":
                         try:
-                            # Try to parse the output from the assignment. 
+                            # Try to parse the output from the assignment.
                             # If it isn't
                             # valid JSON then we reject the assignment.
                             json.loads(
@@ -37,21 +37,25 @@ if __name__ == "__main__":
                                     a["Answer"],
                                 )["answer"]
                             )
-                            approve_ids.append(a["AssignmentId"])
+                            approve_ids.add(a["AssignmentId"])
                         except ValueError as e:
-                            reject_ids.append(["AssignmentId"])
+                            reject_ids.add(["AssignmentId"])
                             print(e)
                     else:
                         print(
-                            "hit %s has already been %s"
-                            % (str(hit_id), a["AssignmentStatus"])
+                            "hit {} - {} has already been {}".format(
+                                hit_id,
+                                a["AssignmentId"],
+                                a["AssignmentStatus"],
+                            )
                         )
         except mtc.exceptions.RequestError:
             continue
 
     print(
-        "This will approve %d assignments and reject %d assignments with "
-        "sandbox=%s" % (len(approve_ids), len(reject_ids), str(args.sandbox))
+        "This will approve {} assignments and reject {} assignments with sandbox={}".format(
+            len(approve_ids), len(reject_ids), args.sandbox
+        )
     )
     print("Continue?")
 
